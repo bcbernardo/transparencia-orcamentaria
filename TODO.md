@@ -6,7 +6,8 @@ Todo list for Transparencia-Orcamentaria
 - [x] Create README.md draft, LICENSE and .gitigore
 - [x] Upload lib to GitHub
 - [x] Add as submodule of Observatorio Niteroiense de Dados Abertos ~onDA
-- [ ] Re-factor expenses classes, abstracting into a base class (module despesas.py)
+- [x] Re-factor expenses classes, abstracting into a base class (module despesas.py)
+- [ ] Re-factor access to expenses views as methods of MainPage class
 - [ ] Implement logging (module despesas.py)
 - [ ] Create and run tests for existing classes and methods
 - [ ] Implement Creditors filter methods (module despesas.py)

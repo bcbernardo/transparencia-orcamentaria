@@ -20,7 +20,6 @@ class MainPage():
         periodo (tuple[str, str], opcional): Periodo do ano para consulta, em
             formato 'DDMM'. Por padrão, inclui todo o período transcorrido.
     """
-    
     def __init__(self, exercicio = CURR_YEAR: str, 
                        periodo = ("",""): tuple[str, str]):
         self.year = exercicio
@@ -38,7 +37,12 @@ class MainPage():
             self.set_period()
         
     def set_year(self):
-        """ Seleciona o ano do exercício fiscal. """
+        """ Seleciona o ano do exercício fiscal. 
+        
+        Levanta:
+            ValueError: Se o ano informado como `exercicio` não estiver listado 
+                no Portal da Transparência.
+        """
         # make sure the given year is valid and available in the portal
         years_available = page.xpath(
             "//select[@id='exercicioConsulta']/option/text()")
@@ -54,7 +58,13 @@ class MainPage():
         return
     
     def set_period(self):
-        """ Seleciona o período de interesse. """
+        """ Seleciona o período de interesse. 
+        
+        Levanta:
+            ValueError: Se o `periodo` informado não for uma dupla de datas
+                válidas, no formato ('DDMM', 'DDMM'), ou se a data de início
+                for posterior à data do final do período.
+        """
         # validate the given period
         try:
             self.period = str(ddmm for ddmm in self.period)
@@ -77,7 +87,51 @@ class MainPage():
         return
 
 
-class Creditors(JQGrid):
+class GenericExpensesView():
+    """ Classe genérica de acesso às visões da base de despesas.
+    
+    Atributos:
+        descricao (str): Descrição por extenso da visão desejada.
+        **kwargs: Argumentos opcionais *exercicio* e *periodo* para restringir
+            a consulta (a serem passados para a classe :class:`MainPage`).
+    """
+    def __init__(self, descricao: str, **kwargs):
+        # access home list of views
+        main_page = MainPage(kwargs)
+        self.driver = MainPage.driver
+        # access view page
+        self.description = descricao
+        view_link = main_page.driver.find_element_by_xpath(
+            "[@text()={self.description}]")
+        view_link.click()
+        self.curr_page = 1
+    
+    def scrape(self) -> tuple[dict, dict]:
+        """ Raspa dados das tabelas jqGrid, até a última página da consulta.
+        
+        Retorna:
+            tuple[dict, dict]: Tupla com um dicionário de metadados da raspagem
+                e um dicionário com os dados propriamente ditos.
+        """
+        metadata = {} # TO-DO
+        results = dict()
+        while True:
+            time.sleep(3)
+            self.page = lxml.html.fromstring(self.driver.page_source)
+            table = JQGrid(self.page)
+            page_results = table.get_values()
+            results.update(page_results)
+            if self.curr_page >= table.page_no:
+                break
+            else: 
+                next_pager = self.driver.find_element_by_xpath(
+                    "//td[@id='next_pager']")
+                next_pager.click()
+                self.curr_page += 1
+        return (metadata, results)
+
+
+class Creditors(GenericExpensesView):
     """ Acesso às consultas de despesas por credor.
     
     Atributos:
@@ -85,44 +139,27 @@ class Creditors(JQGrid):
             do credor, sem pontos ou caracteres especiais. Por padrão, vazio.
         credor (str, opcional): Nome completo ou parcial do credor. Por padrão,
             vazio.
+        ** kwargs : argumentos 
     """
-    
     def __init__(self, cpf_cnpj = "": str, credor = "": str, **kwargs):
-        main_page = super().__init__(**kwargs)
-        self.description = "Despesas por Credor / Instituição"
+        super().__init__(
+            description = "Despesas por Credor / Instituição", kwargs)
         self.cpf_cnpj = cpf_cnpj
         self.creditor = credor
-        self.curr_page = 0
-        # access creditors dataset
-        credores_link = main_page.driver.find_element_by_xpath(
-            "[@text()={self.description}]")
-        credores_link.click()
         # optionally filter for CPF/CNPJ and/or creditor
         if self.cpf_cnpj != "":
             self.filter_cpf_cnpj
         if self.creditor != "":
             self.filter_creditor
         # get values
-        self.results = dict()
-        self.main()
+        self.data = super().scrape()
         
         def filter_cpf_cnpj(self): # TO-DO
             raise NotImplementedError
             
         def filter_creditor(self): # TO-DO
             raise NotImplementedError
-        
-        def main(self):
-            while True:
-                self.curr_page += 1
-                self.page = lxml.html.fromstring(self.driver.page_source)
-                table = JQGrid(self.page)
-                page_results = table.get_values()
-                self.results.update(page_results)
-                if self.curr_page >= table.page_no:
-                    break
-            return
-        
+
 
 if __name__ == "__main__":
     import sys

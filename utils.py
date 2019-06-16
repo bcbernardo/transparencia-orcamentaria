@@ -2,7 +2,7 @@
 
 
 class JQGrid():
-    """ Models a javascript query grid """
+    """ Models a javascript query grid, with method to scrape its contents """
     def __init__(self, page):
         self.page = page
         self.grid = page.xpath(
@@ -16,7 +16,7 @@ class JQGrid():
         self.page_no = self.pager.xpath("//span[@id='sp_1_pager']/text()")
         self_rows_per_page = self.pager.xpath(
             "//select/option[@selected='selected']/text()")
-        self.grid = self.pager("/div[@id=data_atualizacao]")
+        self.last_update = self.grid("/div[@id=data_atualizacao]")
     
     def get_values(self):
         result = dict()
@@ -29,7 +29,6 @@ class JQGrid():
                 row_entries[field] = value
             result[row_id] = row_entries
         return result
-            
 
 
 if __name__ == '__main__':
