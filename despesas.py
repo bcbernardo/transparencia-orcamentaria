@@ -26,6 +26,17 @@ class MainPage():
     def __init__(self, driver: object = selenium.webdriver.Chrome(),
                  exercicio: str = CURR_YEAR,
                  periodo: tuple[str, str] = ("", "")):
+<<<<<<< HEAD
+=======
+        self.year = exercicio
+        self.period = periodo
+
+        # set up web driver
+        logging.debug("Starting headless browser...")
+        self.driver = selenium.webdriver.Chrome()
+        logging.debug("Browser OK!")
+
+>>>>>>> 0ea1bb3199dad9ce025e1b277e7696fee47b5027
         # access main page
         self.url = BASE_URL + "/portal-da-transparencia/despesas"
         logging.debug("Acessing {self.url}...")
@@ -125,11 +136,31 @@ class GenericExpensesView():
     """ Classe genérica de acesso às visões da base de despesas.
 
     Atributos:
+<<<<<<< HEAD
         driver (object): Instância já aberta de WebDriver para raspagem.
     """
 
     def __init__(self, driver: str, **kwargs):
         self.driver = driver
+=======
+        descricao (str): Descrição por extenso da visão desejada.
+        **kwargs: Argumentos opcionais *exercicio* e *periodo* para
+            restringir a consulta (a serem passados para a classe
+            :class:`MainPage`).
+    """
+
+    def __init__(self, descricao: str, **kwargs):
+        # access home list of views
+        logging.debug("Redirecting to Main Page by default...")
+        main_page = MainPage(kwargs)
+        self.driver = main_page.driver
+        # access view page
+        self.description = descricao
+        logging.debug("Accessing dataset view '{self.description}'...")
+        view_link = self.driver.find_element_by_xpath(
+            "[@text()={self.description}]")
+        view_link.click()
+>>>>>>> 0ea1bb3199dad9ce025e1b277e7696fee47b5027
         self.curr_page = 1
 
     def scrape(self) -> tuple[dict, dict]:
@@ -139,7 +170,10 @@ class GenericExpensesView():
             tuple[dict, dict]: Tupla com um dicionário de metadados da raspagem
                 e um dicionário com os dados propriamente ditos.
         """
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0ea1bb3199dad9ce025e1b277e7696fee47b5027
         logging.info("Scraping started...")
         metadata = {}  # TODO
         results = dict()
@@ -161,7 +195,11 @@ class GenericExpensesView():
         return (metadata, results)
 
 
+<<<<<<< HEAD
 class ByCreditors(GenericExpensesView):
+=======
+class Creditors(GenericExpensesView):
+>>>>>>> 0ea1bb3199dad9ce025e1b277e7696fee47b5027
     """ Acesso às consultas de despesas por credor.
 
     Atributos:
@@ -195,6 +233,7 @@ class ByCreditors(GenericExpensesView):
             raise NotImplementedError
 
 
+<<<<<<< HEAD
 def main(exercicio: str = CURR_YEAR,
          periodo: tuple[str, str] = ("", ""),
          cpf_cnpj: str = "", credor: str = ""):
@@ -204,9 +243,15 @@ def main(exercicio: str = CURR_YEAR,
     main_page = MainPage(
         driver=driver, exercicio=exercicio, periodo=periodo)
 
+=======
+def main():
+>>>>>>> 0ea1bb3199dad9ce025e1b277e7696fee47b5027
     raise NotImplementedError()  # TODO
 
 
 if __name__ == "__main__":
     main()
+<<<<<<< HEAD
     raise SystemExit()
+=======
+>>>>>>> 0ea1bb3199dad9ce025e1b277e7696fee47b5027
