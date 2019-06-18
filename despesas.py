@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
+import logging
 import lxml
 import selenium
 import time
 from utils import JQGrid
 
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 BASE_URL = "http://portais.niteroi.rj.gov.br"
 CURR_YEAR = int(dt.datetime.now().year)
@@ -26,16 +28,27 @@ class MainPage():
         self.year = exercicio
         self.period = periodo
 
-        # access main page
+        # set up web driver
+        logging.debug("Starting headless browser...")
         self.driver = selenium.webdriver.Chrome()
+        logging.debug("Browser OK!")
+
+        # access main page
+        self.url = BASE_URL + "/portal-da-transparencia/despesas"
+        logging.debug("Acessing {self.url}...")
         self.driver.get(BASE_URL + "/portal-da-transparencia/despesas")
-        self.page = lxml.html.fromstring(self.driver.page_source)
 
         # optionally change year or set a time interval for the query
         if self.year != CURR_YEAR:
+            logging.debug("Setting year filter...")
             self.set_year()
         if self.period != ("", ""):
+            logging.debug("Setting period filter...")
             self.set_period()
+
+        # get main page contents
+        self.page = lxml.html.fromstring(self.driver.page_source)
+        logging.debug("Main page contents returned sucessfully!")
 
     def set_year(self):
         """ Seleciona o ano do exercício fiscal.
@@ -47,10 +60,12 @@ class MainPage():
         # make sure the given year is valid and available in the portal
         years_available = self.page.xpath(
             "//select[@id='exercicioConsulta']/option/text()")
-        if self.year not in years_available:
-            raise ValueError(
-                "O ano deve estar entre {years_available[0]} "
-                + "e {years_available[1]}.")
+        try:
+            assert self.year in years_available
+        except AssertionError:
+            logging.exception("Invalid year: {self.year}")
+            raise ValueError("O ano deve estar entre {years_available[0]} "
+                             + "e {years_available[1]}.")
         # select the given year
         year_field = self.driver.find_element_by_xpath(
             "//select[@id='exercicioConsulta']/"
@@ -75,9 +90,10 @@ class MainPage():
             assert end_date[2:3] + end_date[0:1] \
                 > start_date[2:3] + start_date[0:1]
         except (TypeError, ValueError, IndexError, AssertionError):
-            raise ValueError(
-                "As datas de início e fim devem ser informadas como uma "
-                + "dupla no formato ('DDMM', 'DDMM'), respectivamente.")
+            logging.exception("Invalid period: {str(self.period)}")
+            raise ValueError("As datas de início e fim devem ser informadas"
+                             + "como uma dupla no formato ('DDMM', 'DDMM'),"
+                             + "respectivamente.")
         # set time filter
         start_date_field = self.driver.find_element_by_id("periodoInicio")
         start_date_field.send_keys(str(self.period[0]))
@@ -91,17 +107,20 @@ class GenericExpensesView():
 
     Atributos:
         descricao (str): Descrição por extenso da visão desejada.
-        **kwargs: Argumentos opcionais *exercicio* e *periodo* para restringir
-            a consulta (a serem passados para a classe :class:`MainPage`).
+        **kwargs: Argumentos opcionais *exercicio* e *periodo* para
+            restringir a consulta (a serem passados para a classe
+            :class:`MainPage`).
     """
 
     def __init__(self, descricao: str, **kwargs):
         # access home list of views
+        logging.debug("Redirecting to Main Page by default...")
         main_page = MainPage(kwargs)
-        self.driver = MainPage.driver
+        self.driver = main_page.driver
         # access view page
         self.description = descricao
-        view_link = main_page.driver.find_element_by_xpath(
+        logging.debug("Accessing dataset view '{self.description}'...")
+        view_link = self.driver.find_element_by_xpath(
             "[@text()={self.description}]")
         view_link.click()
         self.curr_page = 1
@@ -113,12 +132,14 @@ class GenericExpensesView():
             tuple[dict, dict]: Tupla com um dicionário de metadados da raspagem
                 e um dicionário com os dados propriamente ditos.
         """
-        metadata = {}  # TO-DO
+        logging.info("Scraping started...")
+        metadata = {}  # TODO
         results = dict()
         while True:
             time.sleep(3)
             self.page = lxml.html.fromstring(self.driver.page_source)
             table = JQGrid(self.page)
+            logging.info("Scrapping page {self.curr_page}/{table.page_no}")
             page_results = table.get_values()
             results.update(page_results)
             if self.curr_page >= table.page_no:
@@ -128,7 +149,9 @@ class GenericExpensesView():
                     "//td[@id='next_pager']")
                 next_pager.click()
                 self.curr_page += 1
+        logging.info("Scraped {len(results)} rows successfully.")
         return (metadata, results)
+
 
 class Creditors(GenericExpensesView):
     """ Acesso às consultas de despesas por credor.
@@ -147,18 +170,24 @@ class Creditors(GenericExpensesView):
         self.creditor = credor
         # optionally filter for CPF/CNPJ and/or creditor
         if self.cpf_cnpj != "":
+            logging.debug("Setting CPF/CNPJ filter...")
             self.filter_cpf_cnpj
         if self.creditor != "":
+            logging.debug("Setting Creditor filter...")
             self.filter_creditor
         # get values
         self.data = super().scrape()
 
-        def filter_cpf_cnpj(self):  # TO-DO
+        def filter_cpf_cnpj(self):  # TODO
             raise NotImplementedError
 
-        def filter_creditor(self):  # TO-DO
+        def filter_creditor(self):  # TODO
             raise NotImplementedError
+
+
+def main():
+    raise NotImplementedError()  # TODO
 
 
 if __name__ == "__main__":
-    raise SystemExit
+    main()
