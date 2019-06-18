@@ -23,25 +23,22 @@ class MainPage():
             formato 'DDMM'. Por padrão, inclui todo o período transcorrido.
     """
 
-    def __init__(self, exercicio: str = CURR_YEAR,
+    def __init__(self, driver: object = selenium.webdriver.Chrome(),
+                 exercicio: str = CURR_YEAR,
                  periodo: tuple[str, str] = ("", "")):
-        self.year = exercicio
-        self.period = periodo
-
-        # set up web driver
-        logging.debug("Starting headless browser...")
-        self.driver = selenium.webdriver.Chrome()
-        logging.debug("Browser OK!")
-
         # access main page
         self.url = BASE_URL + "/portal-da-transparencia/despesas"
         logging.debug("Acessing {self.url}...")
         self.driver.get(BASE_URL + "/portal-da-transparencia/despesas")
 
-        # optionally change year or set a time interval for the query
+        # optionally change year for the query
+        self.year = exercicio
         if self.year != CURR_YEAR:
             logging.debug("Setting year filter...")
             self.set_year()
+
+        # optionally set a time interval for the query
+        self.period = periodo
         if self.period != ("", ""):
             logging.debug("Setting period filter...")
             self.set_period()
@@ -101,28 +98,38 @@ class MainPage():
         end_date_field.send_keys(str(self.period[0]))
         return
 
+    def access_view(self, descricao: str) -> object:
+        """Acessa a 1a página de um dos modos de visualização de despesas.
+
+        Args:
+            descricao (str): Descrição por extenso da visão desejada.
+
+        Returns:
+            object: Instância WebDriver com a primeira página da
+                visualização escolhida.
+        """
+        logging.debug("Accessing dataset view '{description}'...")
+        try:
+            view_link = self.driver.find_element_by_xpath(
+                "[@text()={self.description}]")
+            view_link.click()
+        except selenium.common.exceptions.NoSuchElementException:
+            logging.exception("No element with given description!")
+            raise ValueError("A descrição fornecida não corresponde a"
+                             + "nenhuma das visualizações disponíveis"
+                             + "no Portal da Transparência.")
+        return self.driver
+
 
 class GenericExpensesView():
     """ Classe genérica de acesso às visões da base de despesas.
 
     Atributos:
-        descricao (str): Descrição por extenso da visão desejada.
-        **kwargs: Argumentos opcionais *exercicio* e *periodo* para
-            restringir a consulta (a serem passados para a classe
-            :class:`MainPage`).
+        driver (object): Instância já aberta de WebDriver para raspagem.
     """
 
-    def __init__(self, descricao: str, **kwargs):
-        # access home list of views
-        logging.debug("Redirecting to Main Page by default...")
-        main_page = MainPage(kwargs)
-        self.driver = main_page.driver
-        # access view page
-        self.description = descricao
-        logging.debug("Accessing dataset view '{self.description}'...")
-        view_link = self.driver.find_element_by_xpath(
-            "[@text()={self.description}]")
-        view_link.click()
+    def __init__(self, driver: str, **kwargs):
+        self.driver = driver
         self.curr_page = 1
 
     def scrape(self) -> tuple[dict, dict]:
@@ -132,6 +139,7 @@ class GenericExpensesView():
             tuple[dict, dict]: Tupla com um dicionário de metadados da raspagem
                 e um dicionário com os dados propriamente ditos.
         """
+
         logging.info("Scraping started...")
         metadata = {}  # TODO
         results = dict()
@@ -157,6 +165,7 @@ class ByCreditors(GenericExpensesView):
     """ Acesso às consultas de despesas por credor.
 
     Atributos:
+        driver (object): Instância já aberta de WebDriver para raspagem.
         cpf_cnpj (str, opcional): Sequência de dígitos contidos no CPF ou CNPF
             do credor, sem pontos ou caracteres especiais. Por padrão, vazio.
         credor (str, opcional): Nome completo ou parcial do credor. Por padrão,
@@ -164,8 +173,9 @@ class ByCreditors(GenericExpensesView):
         ** kwargs : argumentos
     """
 
-    def __init__(self, cpf_cnpj: str = "", credor: str = "", **kwargs):
-        super().__init__("Despesas por Credor / Instituição", kwargs)
+    def __init__(self, driver: object, cpf_cnpj: str = "",
+                 credor: str = "", **kwargs):
+        self.drive = driver
         self.cpf_cnpj = cpf_cnpj
         self.creditor = credor
         # optionally filter for CPF/CNPJ and/or creditor
@@ -185,9 +195,18 @@ class ByCreditors(GenericExpensesView):
             raise NotImplementedError
 
 
-def main():
+def main(exercicio: str = CURR_YEAR,
+         periodo: tuple[str, str] = ("", ""),
+         cpf_cnpj: str = "", credor: str = ""):
+    logging.debug("Starting headless browser...")
+    driver = selenium.webdriver.Chrome()
+    logging.debug("Browser OK!")
+    main_page = MainPage(
+        driver=driver, exercicio=exercicio, periodo=periodo)
+
     raise NotImplementedError()  # TODO
 
 
 if __name__ == "__main__":
     main()
+    raise SystemExit()
