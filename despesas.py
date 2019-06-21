@@ -26,10 +26,6 @@ class MainPage():
     def __init__(self, driver: object = selenium.webdriver.Chrome(),
                  exercicio: str = CURR_YEAR,
                  periodo: tuple[str, str] = ("", "")):
-        # access main page
-        self.url = BASE_URL + "/portal-da-transparencia/despesas"
-        logging.debug("Acessing {self.url}...")
-        self.driver.get(BASE_URL + "/portal-da-transparencia/despesas")
 
         # optionally change year for the query
         self.year = exercicio
