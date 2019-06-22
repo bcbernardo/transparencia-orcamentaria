@@ -10,7 +10,7 @@ from utils import JQGrid
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 BASE_URL = "http://portais.niteroi.rj.gov.br"
-CURR_YEAR = int(dt.datetime.now().year)
+CURR_YEAR = str(dt.datetime.now().year)
 
 
 class MainPage():
