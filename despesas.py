@@ -9,7 +9,7 @@ from utils import JQGrid
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
-BASE_URL = "http://portais.niteroi.rj.gov.br"
+URL = "http://portais.niteroi.rj.gov.br/portal-da-transparencia/despesas"
 CURR_YEAR = str(dt.datetime.now().year)
 
 
@@ -17,67 +17,82 @@ class MainPage():
     """ Acesso à página principal de despesas do Portal da Transparência
 
     Atributos:
-        exercicio (str, opcional): Ano do exercício fiscal. Por padrão,
-            é o ano corrente.
-        periodo (tuple[str, str], opcional): Periodo do ano para consulta, em
+        exercicio (opcional): Ano do exercício fiscal (valor inteiro ou
+            texto). Por padrão,é o ano corrente.
+        periodo (tuple, opcional): Periodo do ano para consulta, em
             formato 'DDMM'. Por padrão, inclui todo o período transcorrido.
     """
 
     def __init__(self, driver: object = selenium.webdriver.Chrome(),
-                 exercicio: str = CURR_YEAR,
-                 periodo: tuple[str, str] = ("", "")):
-
-        # optionally change year for the query
-        self.year = exercicio
-        if self.year != CURR_YEAR:
-            logging.debug("Setting year filter...")
-            self.set_year()
-
-        # optionally set a time interval for the query
-        self.period = periodo
-        if self.period != ("", ""):
-            logging.debug("Setting period filter...")
-            self.set_period()
-
-        # get main page contents
+                 exercicio=CURR_YEAR, periodo: tuple = ("", "")):
+        logging.debug("Accessing main page")
+        self.driver = driver
+        self.driver.get(URL)
         self.page = lxml.html.fromstring(self.driver.page_source)
-        logging.debug("Main page contents returned sucessfully!")
+        # optionally change year for the query
+        if exercicio != CURR_YEAR:
+            self.year = self.validate_year(exercicio)
+            self.driver = self.set_year()
+        # optionally set a time interval for the query
+        if periodo != ("", ""):
+            self.period = self.validate_period(periodo)
+            self.set_period()
+        logging.debug("Main page contents returned sucessfully.")
 
-    def set_year(self):
-        """ Seleciona o ano do exercício fiscal.
+    def validate_year(self, year) -> str:
+        """ Valida o ano do exercício.
 
+        Argumentos:
+            year: Ano do exercício para validação.
+        Retorna:
+            str: O ano informado, se válido.
         Levanta:
             ValueError: Se o ano informado como `exercicio` não
                 estiver listado no Portal da Transparência.
         """
-        # make sure the given year is valid and available in the portal
+        logging.debug("Validating fiscal year...")
+        year = str(self.year)
         years_available = self.page.xpath(
             "//select[@id='exercicioConsulta']/option/text()")
         try:
-            assert self.year in years_available
+            assert year in years_available
         except AssertionError:
             logging.exception("Invalid year: {self.year}")
             raise ValueError("O ano deve estar entre {years_available[0]} "
                              + "e {years_available[1]}.")
-        # select the given year
+        return year
+
+    def set_year(self):
+        """ Seleciona o ano do exercício fiscal.
+
+        Retorna:
+            object: WebDriver com o filtro configurado.
+        """
+        logging.debug("Setting fiscal year filter...")
         year_field = self.driver.find_element_by_xpath(
             "//select[@id='exercicioConsulta']/"
             + "option[@text()={self.year}]")
         year_field.click()
-        return
+        return self.driver
 
-    def set_period(self):
-        """ Seleciona o período de interesse.
+    def validate_period(self, period: tuple) -> tuple[str, str]:
+        """ Valida o período informado.
 
+        Argumentos:
+            period (tuple): Período para validação.
+        Retorna:
+            tuple[str, str]: Período informado, com tipos padronizados, se
+                válido.
         Levanta:
-            ValueError: Se o `periodo` informado não for uma dupla de datas
-                válidas, no formato ('DDMM', 'DDMM'), ou se a data de início
-                for posterior à data do final do período.
+            ValueError: Se `period` não for uma dupla de datas válidas,
+                no formato ('DDMM', 'DDMM'), ou se a data de início for
+                posterior à data do final do período.
         """
-        # validate the given period
+        logging.debug("Validating time period...")
         try:
-            self.period = str(ddmm for ddmm in self.period)
-            start_date, end_date = self.period[0], self.period[1]
+            period = (str(ddmm) for ddmm in period)
+            assert len(period) == 2
+            start_date, end_date = period[0], period[1]
             assert int(start_date[0:1]) <= 31 and int(start_date[2:3]) <= 12
             assert int(end_date[0:1]) <= 31 and int(end_date[2:3]) <= 12
             assert end_date[2:3] + end_date[0:1] \
@@ -87,12 +102,20 @@ class MainPage():
             raise ValueError("As datas de início e fim devem ser informadas"
                              + "como uma dupla no formato ('DDMM', 'DDMM'),"
                              + "respectivamente.")
-        # set time filter
+        return (start_date, end_date)
+
+    def set_period(self) -> object:
+        """ Seleciona o período de interesse.
+
+        Retorna:
+            object: WebDriver com filtro de período configurado.
+        """
+        logging.debug("Setting period filter...")
         start_date_field = self.driver.find_element_by_id("periodoInicio")
         start_date_field.send_keys(str(self.period[0]))
         end_date_field = self.driver.find_element_by_id("periodoFim")
-        end_date_field.send_keys(str(self.period[0]))
-        return
+        end_date_field.send_keys(str(self.period[1]))
+        return self.driver
 
     def access_view(self, descricao: str) -> object:
         """Acessa a 1ª página de um dos modos de visualização de despesas.
@@ -101,8 +124,7 @@ class MainPage():
             descricao (str): Descrição por extenso da visão desejada.
 
         Returns:
-            object: Instância WebDriver com a primeira página da
-                visualização escolhida.
+            object: WebDriver com a primeira página da visualização escolhida.
         """
         logging.debug("Accessing dataset view '{description}'...")
         try:
@@ -165,10 +187,11 @@ class ByCreditors(GenericExpensesView):
 
     Atributos:
         driver (object): Instância já aberta de WebDriver para raspagem.
-        cpf_cnpj (str, opcional): Sequência de dígitos contidos no CPF ou CNPF
-            do credor, sem pontos ou caracteres especiais. Por padrão, vazio.
-        credor (str, opcional): Nome completo ou parcial do credor. Por padrão,
+        cpf_cnpj (str, opcional): Sequência de dígitos contidos no CPF ou
+            CNPF do credor, sem pontos ou caracteres especiais. Por padrão,
             vazio.
+        credor (str, opcional): Nome completo ou parcial do credor. Por
+            padrão, vazio.
         ** kwargs : argumentos
     """
 
@@ -202,7 +225,6 @@ def main(exercicio: str = CURR_YEAR,
     logging.debug("Browser OK!")
     main_page = MainPage(
         driver=driver, exercicio=exercicio, periodo=periodo)
-
     raise NotImplementedError()  # TODO
 
 
