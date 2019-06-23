@@ -129,7 +129,7 @@ class MainPage():
         logging.debug("Accessing dataset view '{description}'...")
         try:
             view_link = self.driver.find_element_by_xpath(
-                "[@text()={self.description}]")
+                "//a[@text()={self.description}]")
             view_link.click()
         except selenium.common.exceptions.NoSuchElementException:
             logging.exception("No element with given description!")
