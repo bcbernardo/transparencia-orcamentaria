@@ -2,7 +2,7 @@
 
 import unittest
 import random
-from .. import despesas
+import despesas
 
 
 class TestMainPage(unittest.TestCase):
@@ -72,6 +72,23 @@ class TestMainPage(unittest.TestCase):
             self.main_page.set_period(period)
         except Exception as e:
             self.fail("Unexpected exception raised!: ", e)
+
+    def test_access_view(self):
+        descriptions = [
+            "Despesas por Instituição / Orgão",
+            "Despesas por Credor / Instituição",
+            "Tipos de Despesas ( Elementos )"]
+        try:
+            for descr in descriptions:
+                self.main_page.access_view(descricao=descr)
+                self.setUp()
+        except Exception as e:
+            self.fail("Unexpected exception raised!: ", e)
+
+    def test_bad_view(self):
+        description = "abaopdugbsakjçvb"
+        with self.assertRaises(ValueError):
+            self.main_page.access_view(descricao=description)
 
 
 if __name__ == "__main__":
