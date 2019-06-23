@@ -3,8 +3,9 @@
 import datetime as dt
 import logging
 import lxml
-import selenium
 import time
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from utils import JQGrid
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -23,7 +24,7 @@ class MainPage():
             formato 'DDMM'. Por padrão, inclui todo o período transcorrido.
     """
 
-    def __init__(self, driver: object = selenium.webdriver.Chrome(),
+    def __init__(self, driver: object = webdriver.Chrome(),
                  exercicio=CURR_YEAR, periodo: tuple = ("", "")):
         logging.debug("Accessing main page")
         self.driver = driver
@@ -131,7 +132,7 @@ class MainPage():
             view_link = self.driver.find_element_by_xpath(
                 "//a[@text()={self.description}]")
             view_link.click()
-        except selenium.common.exceptions.NoSuchElementException:
+        except NoSuchElementException:
             logging.exception("No element with given description!")
             raise ValueError("A descrição fornecida não corresponde a"
                              + "nenhuma das visualizações disponíveis"
@@ -221,7 +222,7 @@ def main(exercicio: str = CURR_YEAR,
          periodo: tuple[str, str] = ("", ""),
          cpf_cnpj: str = "", credor: str = ""):
     logging.debug("Starting headless browser...")
-    driver = selenium.webdriver.Chrome()
+    driver = webdriver.Chrome()
     logging.debug("Browser OK!")
     main_page = MainPage(
         driver=driver, exercicio=exercicio, periodo=periodo)
