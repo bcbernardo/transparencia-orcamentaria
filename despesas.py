@@ -2,10 +2,11 @@
 
 import datetime as dt
 import logging
-import lxml
 import time
+from lxml import etree
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+from typing import Tuple
 from utils import JQGrid
 
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
@@ -29,7 +30,7 @@ class MainPage():
         logging.debug("Accessing main page")
         self.driver = driver
         self.driver.get(URL)
-        self.page = lxml.html.fromstring(self.driver.page_source)
+        self.page = etree.fromstring(self.driver.page_source)
         # optionally change year for the query
         if exercicio != CURR_YEAR:
             self.year = self.validate_year(exercicio)
@@ -76,7 +77,7 @@ class MainPage():
         year_field.click()
         return self.driver
 
-    def validate_period(self, period: tuple) -> tuple[str, str]:
+    def validate_period(self, period: tuple) -> Tuple[str, str]:
         """ Valida o período informado.
 
         Argumentos:
@@ -91,7 +92,7 @@ class MainPage():
         """
         logging.debug("Validating time period...")
         try:
-            period = (str(ddmm) for ddmm in period)
+            period = tuple(str(ddmm) for ddmm in period)
             assert len(period) == 2
             start_date, end_date = period[0], period[1]
             assert int(start_date[0:1]) <= 31 and int(start_date[2:3]) <= 12
@@ -154,7 +155,7 @@ class GenericExpensesView():
     def rows_per_page(self, rows=10):
         raise NotImplementedError()  # TODO
 
-    def scrape(self) -> tuple[dict, dict]:
+    def scrape(self) -> Tuple[dict, dict]:
         """ Raspa dados das tabelas jqGrid, até a última página da consulta.
 
         Retorna:
@@ -167,7 +168,7 @@ class GenericExpensesView():
         results = dict()
         while True:
             time.sleep(3)
-            self.page = lxml.html.fromstring(self.driver.page_source)
+            self.page = etree.fromstring(self.driver.page_source)
             table = JQGrid(self.page)
             logging.info("Scrapping page {self.curr_page}/{table.page_no}")
             page_results = table.get_values()
@@ -219,7 +220,7 @@ class ByCreditors(GenericExpensesView):
 
 
 def main(exercicio: str = CURR_YEAR,
-         periodo: tuple[str, str] = ("", ""),
+         periodo: Tuple[str, str] = ("", ""),
          cpf_cnpj: str = "", credor: str = ""):
     logging.debug("Starting headless browser...")
     driver = webdriver.Chrome()
