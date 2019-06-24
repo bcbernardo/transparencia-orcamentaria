@@ -10,7 +10,7 @@ class TestMainPage(unittest.TestCase):
         self.main_page = despesas.MainPage()
 
     def test_driver(self):
-        """ Test year when no filter is provided. """
+        """ Test driver initialization. """
         try:
             self.main_page.driver.find_element_by_id("consulta_dados")
         except Exception as e:
@@ -91,6 +91,32 @@ class TestMainPage(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.main_page.access_view(descricao=description)
 
+
+class TestByCreditor(unittest.TestCase):
+    def setUp(self):
+        self.driver = despesas.MainPage().access_view(
+            "Despesas por Credor / Instituição")
+        self.view = despesas.ByCreditors(driver=self.driver, cpf_cnpj="10",)
+
+    def test_driver(self):
+        """ Test access to correct view page. """
+        try:
+            self.driver.find_element_by_xpath("//thead//div[text()='Credor']")
+        except Exception as e:
+            self.fail(
+                "Failed to retrieve expenses view by creditor: {}".format(e))
+
+    def test_constructor(self):
+        """ Test whether all attributes are accessible. """
+        self.assertEquals(self.view.curr_page, 1)
+        self.assertEquals(self.view.cpf_cnpj, "")
+        self.assertEquals(self.view.creditor, "")
+
+    def test_scrape(self):
+        """ Test whether data scraping method returns results"""
+        scraped = self.view.scrape()
+        print(len(scraped["results"]))
+        self.assertGreater(len(scraped["results"]), 0)
 
 if __name__ == "__main__":
     unittest.main()

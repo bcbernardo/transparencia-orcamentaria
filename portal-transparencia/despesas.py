@@ -186,7 +186,7 @@ class GenericExpensesView():
                 next_pager.click()
                 self.curr_page += 1
         logging.info("Scraped {len(results)} rows successfully.")
-        return (metadata, results)
+        return {"metadata": metadata, "results": results}
 
 
 class ByCreditors(GenericExpensesView):
@@ -204,7 +204,7 @@ class ByCreditors(GenericExpensesView):
 
     def __init__(self, driver: object, cpf_cnpj: str = "",
                  credor: str = "", **kwargs):
-        self.drive = driver
+        super().__init__(driver=driver, **kwargs)
         self.cpf_cnpj = cpf_cnpj
         self.creditor = credor
         # optionally filter for CPF/CNPJ and/or creditor
@@ -214,8 +214,6 @@ class ByCreditors(GenericExpensesView):
         if self.creditor != "":
             logging.debug("Setting Creditor filter...")
             self.filter_creditor
-        # get values
-        self.data = super().scrape()
 
         def filter_cpf_cnpj(self):  # TODO
             raise NotImplementedError
