@@ -14,7 +14,8 @@ class TestMainPage(unittest.TestCase):
         try:
             self.main_page.driver.find_element_by_id("consulta_dados")
         except Exception as e:
-            self.fail("Failed to retrieve database views main page: ", e)
+            self.fail(
+                "Failed to retrieve database views main page: {}".format(e))
 
     def test_validate_year(self):
         """ Test whether a valid, previous year, will be validated. """
@@ -23,7 +24,7 @@ class TestMainPage(unittest.TestCase):
             year_validated = self.main_page.validate_year(year)
             self.assertIsInstance(year_validated, str)
         except Exception as e:
-            self.fail("Unexpected exception raised!: ", e)
+            self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_invalidate_bad_year(self):
         """ Test whether an invalid year will raise ValueError. """
@@ -37,7 +38,7 @@ class TestMainPage(unittest.TestCase):
             year = random.randrange(2008, 2019)
             self.main_page.set_year(year)
         except Exception as e:
-            self.fail("Unexpected exception raised!: ", e)
+            self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_validate_period(self):
         """ Test whether a valid time period will be validated. """
@@ -46,9 +47,9 @@ class TestMainPage(unittest.TestCase):
             period_validated = self.main_page.validate_period(period)
             self.assertIsInstance(period_validated, tuple)
             for date in period_validated:
-                self.assertIsInstance(period_validated, str)
+                self.assertIsInstance(date, str)
         except Exception as e:
-            self.fail("Unexpected exception raised!: ", e)
+            self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_invalidate_bad_period(self):
         """ Test whether an invalid time period will raise ValueError. """
@@ -71,7 +72,7 @@ class TestMainPage(unittest.TestCase):
             period = ("0101", "2802")
             self.main_page.set_period(period)
         except Exception as e:
-            self.fail("Unexpected exception raised!: ", e)
+            self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_access_view(self):
         descriptions = [
@@ -83,7 +84,7 @@ class TestMainPage(unittest.TestCase):
                 self.main_page.access_view(descricao=descr)
                 self.setUp()
         except Exception as e:
-            self.fail("Unexpected exception raised!: ", e)
+            self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_bad_view(self):
         description = "abaopdugbsakjçvb"

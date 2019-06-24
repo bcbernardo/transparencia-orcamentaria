@@ -2,8 +2,8 @@
 
 import datetime as dt
 import logging
+import lxml.html
 import time
-from lxml import etree
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from typing import Tuple
@@ -30,15 +30,15 @@ class MainPage():
         logging.debug("Accessing main page")
         self.driver = driver
         self.driver.get(URL)
-        self.page = etree.fromstring(self.driver.page_source)
+        self.page = lxml.html.fromstring(self.driver.page_source)
         # optionally change year for the query
         if exercicio != CURR_YEAR:
             self.year = self.validate_year(exercicio)
-            self.driver = self.set_year()
+            self.driver = self.set_year(self.year)
         # optionally set a time interval for the query
         if periodo != ("", ""):
             self.period = self.validate_period(periodo)
-            self.set_period()
+            self.driver = self.set_period(self.period)
         logging.debug("Main page contents returned sucessfully.")
 
     def validate_year(self, year) -> str:
@@ -53,27 +53,29 @@ class MainPage():
                 estiver listado no Portal da Transparência.
         """
         logging.debug("Validating fiscal year...")
-        year = str(self.year)
+        year = str(year)
         years_available = self.page.xpath(
             "//select[@id='exercicioConsulta']/option/text()")
         try:
             assert year in years_available
         except AssertionError:
-            logging.exception("Invalid year: {self.year}")
-            raise ValueError("O ano deve estar entre {years_available[0]} "
-                             + "e {years_available[1]}.")
+            logging.exception("Invalid year: {}".format(year))
+            raise ValueError("O ano deve estar entre {} e {}!".format(
+                years_available[0], years_available[-1]))
         return year
 
-    def set_year(self):
+    def set_year(self, year: str):
         """ Seleciona o ano do exercício fiscal.
 
+        Argumentos:
+            year (str): Ano como uma string no formato 'AAAA'.
         Retorna:
             object: WebDriver com o filtro configurado.
         """
         logging.debug("Setting fiscal year filter...")
         year_field = self.driver.find_element_by_xpath(
             "//select[@id='exercicioConsulta']/"
-            + "option[@text()={self.year}]")
+            + "option[text()='{}']".format(year))
         year_field.click()
         return self.driver
 
@@ -100,23 +102,26 @@ class MainPage():
             assert end_date[2:3] + end_date[0:1] \
                 > start_date[2:3] + start_date[0:1]
         except (TypeError, ValueError, IndexError, AssertionError):
-            logging.exception("Invalid period: {str(self.period)}")
+            logging.exception("Invalid period: {}".format(str(period)))
             raise ValueError("As datas de início e fim devem ser informadas"
                              + "como uma dupla no formato ('DDMM', 'DDMM'),"
                              + "respectivamente.")
         return (start_date, end_date)
 
-    def set_period(self) -> object:
+    def set_period(self, period: Tuple[str, str]) -> object:
         """ Seleciona o período de interesse.
 
+        Argumentos:
+            period (tuple[str, str]): Período, como tupla no formato
+                ('DDMM', 'DDMM').
         Retorna:
             object: WebDriver com filtro de período configurado.
         """
         logging.debug("Setting period filter...")
         start_date_field = self.driver.find_element_by_id("periodoInicio")
-        start_date_field.send_keys(str(self.period[0]))
+        start_date_field.send_keys(str(period[0]))
         end_date_field = self.driver.find_element_by_id("periodoFim")
-        end_date_field.send_keys(str(self.period[1]))
+        end_date_field.send_keys(str(period[1]))
         return self.driver
 
     def access_view(self, descricao: str) -> object:
@@ -131,7 +136,7 @@ class MainPage():
         logging.debug("Accessing dataset view '{description}'...")
         try:
             view_link = self.driver.find_element_by_xpath(
-                "//a[@text()={descricao}]")
+                "//a[text()[normalize-space(.)='{}']]".format(descricao))
             view_link.click()
         except NoSuchElementException:
             logging.exception("No element with given description!")
@@ -168,7 +173,7 @@ class GenericExpensesView():
         results = dict()
         while True:
             time.sleep(3)
-            self.page = etree.fromstring(self.driver.page_source)
+            self.page = lxml.html.fromstring(self.driver.page_source)
             table = JQGrid(self.page)
             logging.info("Scrapping page {self.curr_page}/{table.page_no}")
             page_results = table.get_values()
