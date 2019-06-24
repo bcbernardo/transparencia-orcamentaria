@@ -20,57 +20,57 @@ class TestMainPage(unittest.TestCase):
     def test_validate_year(self):
         """ Test whether a valid, previous year, will be validated. """
         try:
-            year = random.randrange(2008, 2019)
-            year_validated = self.main_page.validate_year(year)
-            self.assertIsInstance(year_validated, str)
+            self.main_page.year = random.randrange(2008, 2019)
+            self.main_page.validate_year()
+            self.assertIsInstance(self.main_page.year, str)
         except Exception as e:
             self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_invalidate_bad_year(self):
         """ Test whether an invalid year will raise ValueError. """
-        year = "1888"
+        self.main_page.year = "1888"
         with self.assertRaises(ValueError):
-            self.main_page.validate_year(year)
+            self.main_page.validate_year()
 
     def test_set_year(self):
         """ Test whether a valid, previous year, can be set. """
         try:
-            year = random.randrange(2008, 2019)
-            self.main_page.set_year(year)
+            self.main_page.year = random.randrange(2008, 2019)
+            self.main_page.set_year()
         except Exception as e:
             self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_validate_period(self):
         """ Test whether a valid time period will be validated. """
         try:
-            period = ("0101", "2802")
-            period_validated = self.main_page.validate_period(period)
-            self.assertIsInstance(period_validated, tuple)
-            for date in period_validated:
+            self.main_page.period = ("0101", "2802")
+            self.main_page.validate_period()
+            self.assertIsInstance(self.main_page.period, tuple)
+            for date in self.main_page.period:
                 self.assertIsInstance(date, str)
         except Exception as e:
             self.fail("Unexpected exception raised!: {}".format(e))
 
     def test_invalidate_bad_period(self):
         """ Test whether an invalid time period will raise ValueError. """
-        period = ("3713", "0211")
+        self.main_page.period = ("3713", "0211")
         with self.assertRaises(ValueError):
-            self.main_page.validate_period(period)
+            self.main_page.validate_period()
 
     def test_invalidate_inverted_period(self):
         """
         Test whether a time period with start date > end date will raise
         ValueError.
         """
-        period = ("3003", "0102")
+        self.main_page.period = ("3003", "0102")
         with self.assertRaises(ValueError):
-            self.main_page.validate_period(period)
+            self.main_page.validate_period()
 
     def test_set_period(self):
         """ Test whether a valid time period can be set. """
         try:
-            period = ("0101", "2802")
-            self.main_page.set_period(period)
+            self.main_page.period = ("0101", "2802")
+            self.main_page.set_period()
         except Exception as e:
             self.fail("Unexpected exception raised!: {}".format(e))
 
@@ -94,8 +94,9 @@ class TestMainPage(unittest.TestCase):
 
 class TestByCreditor(unittest.TestCase):
     def setUp(self):
-        self.driver = despesas.MainPage().access_view(
-            "Despesas por Credor / Instituição")
+        _main_page = despesas.MainPage()
+        _main_page.access_view("Despesas por Credor / Instituição")
+        self.driver = _main_page.driver
         self.view = despesas.ByCreditors(driver=self.driver, cpf_cnpj="10",)
 
     def test_driver(self):
@@ -113,10 +114,11 @@ class TestByCreditor(unittest.TestCase):
         self.assertEquals(self.view.creditor, "")
 
     def test_scrape(self):
-        """ Test whether data scraping method returns results"""
+        """ Test whether data scraping method returns results. """
         scraped = self.view.scrape()
         print(len(scraped["results"]))
         self.assertGreater(len(scraped["results"]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
