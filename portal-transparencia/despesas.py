@@ -127,16 +127,21 @@ class GenericExpensesView():
 
     Atributos:
         driver (object): Instância já aberta de WebDriver para raspagem.
+        **kwargs: Argumentos nomeados opcionais, para filtrar os valores
+            consultados.
     """
 
-    _filters = []  # list of filter methods
-
-    def __init__(self, driver: str, **kwargs):
+    def __init__(self, driver: object, **kwargs):
         self.driver = driver
         self.curr_page = 1
-        self.apply_filters(**kwargs)
+        self.__set_filters()
+        self.__apply_filters(**kwargs)
 
-    def apply_filters(self, **kwargs):
+    def __set_filters(self):
+        """ Define of filtros possíveis. """
+        self._filters = dict()
+
+    def __apply_filters(self, **kwargs):
         """ Aplica filtros opcionais para a consulta.
 
         Consulte as implementações específicas pelas subclasses.
@@ -144,8 +149,9 @@ class GenericExpensesView():
         Argumentos:
             **kwargs: Argumentos nomeados opcionais para aplicar filtros.
         """
-        for filter in self._filters:
-            filter(**kwargs)
+        for filter_name, filter_function in enumerate(self._filters):
+            if filter_name in kwargs.keys():
+                filter_function(kwargs[filter_name])
 
     def rows_per_page(self, rows=10):
         raise NotImplementedError()  # TODO
@@ -192,27 +198,18 @@ class ByCreditors(GenericExpensesView):
         ** kwargs : argumentos
     """
 
-    def __init__(self, driver: object, cpf_cnpj: str = "",
-                 credor: str = "", **kwargs):
-        super().__init__(driver=driver, **kwargs)
-        self.cpf_cnpj = cpf_cnpj
-        self.creditor = credor
-        # optionally filter for CPF/CNPJ
-        self.cpf_cnpj = cpf_cnpj
-        if self.cpf_cnpj != "":
-            self.filter_cpf_cnpj()
-        # optionally filter for creditor name
-        self.creditor = credor
-        if self.creditor != "":
-            self.filter_creditor()
+    def __set_filters(self):
+        self._filters = {
+            "cpf_cnpj": self.filter_cpf_cnpj(),
+            "credor": self.filter_creditor()}
 
-        def filter_cpf_cnpj(self):  # TODO
-            logging.debug("Setting CPF/CNPJ filter...")
-            raise NotImplementedError
+    def filter_cpf_cnpj(self, cpf_cnpj):  # TODO
+        logging.debug("Setting CPF/CNPJ filter...")
+        raise NotImplementedError
 
-        def filter_creditor(self):  # TODO
-            logging.debug("Setting Creditor filter...")
-            raise NotImplementedError
+    def filter_creditor(self, creditor):  # TODO
+        logging.debug("Setting Creditor filter...")
+        raise NotImplementedError
 
 
 def main(exercicio: str = CURR_YEAR,

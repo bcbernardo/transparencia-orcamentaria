@@ -97,7 +97,7 @@ class TestByCreditor(unittest.TestCase):
         _main_page = despesas.MainPage()
         _main_page.access_view("Despesas por Credor / Instituição")
         self.driver = _main_page.driver
-        self.view = despesas.ByCreditors(driver=self.driver, cpf_cnpj="10",)
+        self.view = despesas.ByCreditors(driver=self.driver)
 
     def test_driver(self):
         """ Test access to correct view page. """
@@ -108,10 +108,10 @@ class TestByCreditor(unittest.TestCase):
                 "Failed to retrieve expenses view by creditor: {}".format(e))
 
     def test_constructor(self):
-        """ Test whether all attributes are accessible. """
+        """ Test whether all attributes are set as expected. """
         self.assertEquals(self.view.curr_page, 1)
-        self.assertEquals(self.view.cpf_cnpj, "")
-        self.assertEquals(self.view.creditor, "")
+        self.assertIn("cpf_cnpj", self.view._filters)
+        self.assertIn("credor", self.view._filters)
 
     def test_scrape(self):
         """ Test whether data scraping method returns results. """
