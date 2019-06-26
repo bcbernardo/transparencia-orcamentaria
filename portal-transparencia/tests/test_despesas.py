@@ -116,7 +116,7 @@ class TestByCreditor(unittest.TestCase):
 
     def test_scrape(self):
         """ Test whether data scraping method returns results. """
-        scraped = self.view.scrape()
+        scraped = self.view.scrape(stop=2)
         print(len(scraped["results"]))
         self.assertGreater(len(scraped["results"]), 0)
 

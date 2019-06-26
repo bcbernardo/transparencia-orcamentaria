@@ -156,9 +156,12 @@ class GenericExpensesView():
     def rows_per_page(self, rows=10):
         raise NotImplementedError()  # TODO
 
-    def scrape(self) -> Tuple[dict, dict]:
+    def scrape(self, stop = 1000) -> Tuple[dict, dict]:
         """ Raspa dados das tabelas jqGrid, até a última página da consulta.
 
+        Argumentos:
+            stop (int, opcional): Número da página máxima até a qual deve ir a
+                raspagem. Em geral, não é necessário alterar o padrão (1000).
         Retorna:
             tuple[dict, dict]: Tupla com um dicionário de metadados da raspagem
                 e um dicionário com os dados propriamente ditos.
@@ -174,7 +177,7 @@ class GenericExpensesView():
             logging.info("Scrapping page {self.curr_page}/{table.page_no}")
             page_results = table.get_values()
             results.update(page_results)
-            if self.curr_page >= table.page_no:
+            if self.curr_page >= table.page_no or self.curr_page >= stop:
                 break
             else:
                 next_pager = self.driver.find_element_by_xpath(
