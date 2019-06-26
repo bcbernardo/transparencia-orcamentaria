@@ -27,17 +27,15 @@ class JQGrid():
             "//div[@id='data_atualizacao']/text()")[0]
 
     def get_values(self):
-        result = dict()
+        result = list()
         for r in self.rows:
-            print(r)
-            break
             row_id = r.xpath("/@id")[0]
-            row_entries = dict()
+            row_data = {"id": row_id}
             for i in range(0, len(self.fields)+1):
                 field = self.fields[i]
                 value = r.xpath("/td[{i}]/text()")[0]
-                row_entries[field] = value
-            result[row_id] = row_entries
+                row_data[field] = value
+            result.append(row_data)
         return result
 
 
