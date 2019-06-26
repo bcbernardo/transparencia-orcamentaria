@@ -102,7 +102,8 @@ class TestByCreditor(unittest.TestCase):
     def test_driver(self):
         """ Test access to correct view page. """
         try:
-            self.driver.find_element_by_xpath("//thead//div[text()='Credor']")
+            self.driver.find_element_by_xpath(
+                "//div[contains(string(), 'Credor')]")
         except Exception as e:
             self.fail(
                 "Failed to retrieve expenses view by creditor: {}".format(e))

@@ -215,12 +215,7 @@ class ByCreditors(GenericExpensesView):
 def main(exercicio: str = CURR_YEAR,
          periodo: Tuple[str, str] = ("", ""),
          cpf_cnpj: str = "", credor: str = ""):
-    logging.debug("Starting headless browser...")
-    driver = webdriver.Chrome()
-    logging.debug("Browser OK!")
-    main_page = MainPage(
-        driver=driver, exercicio=exercicio, periodo=periodo)
-    raise NotImplementedError()  # TODO
+    pass  # TODO
 
 
 if __name__ == "__main__":
