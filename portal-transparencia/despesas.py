@@ -156,7 +156,7 @@ class GenericExpensesView():
     def rows_per_page(self, rows=10):
         raise NotImplementedError()  # TODO
 
-    def scrape(self, stop = 1000) -> Tuple[dict, dict]:
+    def scrape(self, stop=1000) -> Tuple[dict, dict]:
         """ Raspa dados das tabelas jqGrid, até a última página da consulta.
 
         Argumentos:
@@ -172,9 +172,9 @@ class GenericExpensesView():
         results = dict()
         while True:
             time.sleep(3)
-            self.page = lxml.html.fromstring(self.driver.page_source)
-            table = JQGrid(self.page)
-            logging.info("Scrapping page {self.curr_page}/{table.page_no}")
+            table = JQGrid(page_source=self.driver.page_source)
+            logging.info("Scrapping page {:d}/{:d}".format(
+                self.curr_page, table.page_no))
             page_results = table.get_values()
             results.update(page_results)
             if self.curr_page >= table.page_no or self.curr_page >= stop:
@@ -184,7 +184,7 @@ class GenericExpensesView():
                     "//td[@id='next_pager']")
                 next_pager.click()
                 self.curr_page += 1
-        logging.info("Scraped {len(results)} rows successfully.")
+        logging.info("Scraped {:d} rows successfully.".format(len(results)))
         return {"metadata": metadata, "results": results}
 
 
