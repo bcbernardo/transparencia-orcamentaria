@@ -110,7 +110,7 @@ class MainPage():
         Args:
             descricao (str): Descrição por extenso da visão desejada.
         """
-        logging.debug("Accessing dataset view '{description}'...")
+        logging.debug("Accessing dataset view '{}'...".format(descricao))
         try:
             view_link = self.driver.find_element_by_xpath(
                 "//a[text()[normalize-space(.)='{}']]".format(descricao))
@@ -127,31 +127,23 @@ class GenericExpensesView():
 
     Atributos:
         driver (object): Instância já aberta de WebDriver para raspagem.
-        **kwargs: Argumentos nomeados opcionais, para filtrar os valores
+        **kwargs (str): Argumentos nomeados opcionais, para filtrar os valores
             consultados.
     """
 
-    def __init__(self, driver: object, **kwargs):
+    def __init__(self, driver: object, **kwargs: str):
         self.driver = driver
         self.curr_page = 1
-        self.__set_filters()
-        self.__apply_filters(**kwargs)
+        self._filter_params = kwargs  # user-provided parameters for filtering
+        self._filter_ids = dict()  # {'field name for filtering': 'filterid'}
 
-    def __set_filters(self):
-        """ Define of filtros possíveis. """
-        self._filters = dict()
-
-    def __apply_filters(self, **kwargs):
-        """ Aplica filtros opcionais para a consulta.
-
-        Consulte as implementações específicas pelas subclasses.
-
-        Argumentos:
-            **kwargs: Argumentos nomeados opcionais para aplicar filtros.
-        """
-        for filter_name, filter_function in enumerate(self._filters):
-            if filter_name in kwargs.keys():
-                filter_function(kwargs[filter_name])
+    def _apply_filters(self):
+        """ Aplica um filtro para a consulta. """
+        for field_name, filter_expression in self._filter_params.items():
+            if filter_expression != "":
+                element_id = self._filter_ids[field_name]
+                input_element = self.driver.find_element_by_id(element_id)
+                input_element.send_keys(filter_expression)
 
     def rows_per_page(self, rows=10):
         raise NotImplementedError()  # TODO
@@ -168,20 +160,19 @@ class GenericExpensesView():
         """
 
         logging.info("Scraping started...")
-        metadata = {}  # TODO
-        results = dict()
+        metadata = dict()  # TODO
+        results = list()
         while True:
             time.sleep(3)
             table = JQGrid(page_source=self.driver.page_source)
             logging.info("Scrapping page {:d}/{:d}".format(
                 self.curr_page, table.page_no))
             page_results = table.get_values()
-            results.update(page_results)
+            results.extend(page_results)
             if self.curr_page >= table.page_no or self.curr_page >= stop:
                 break
             else:
-                next_pager = self.driver.find_element_by_xpath(
-                    "//td[@id='next_pager']")
+                next_pager = self.driver.find_element_by_id("next_pager")
                 next_pager.click()
                 self.curr_page += 1
         logging.info("Scraped {:d} rows successfully.".format(len(results)))
@@ -198,21 +189,14 @@ class ByCreditors(GenericExpensesView):
             vazio.
         credor (str, opcional): Nome completo ou parcial do credor. Por
             padrão, vazio.
-        ** kwargs : argumentos
     """
 
-    def __set_filters(self):
-        self._filters = {
-            "cpf_cnpj": self.filter_cpf_cnpj(),
-            "credor": self.filter_creditor()}
-
-    def filter_cpf_cnpj(self, cpf_cnpj):  # TODO
-        logging.debug("Setting CPF/CNPJ filter...")
-        raise NotImplementedError
-
-    def filter_creditor(self, creditor):  # TODO
-        logging.debug("Setting Creditor filter...")
-        raise NotImplementedError
+    def __init__(self, driver: object, cpf_cnpj: str = "", credor: str = "",
+                 **kwargs):
+        super().__init__(driver=driver, cpf_cnpj=cpf_cnpj, credor=credor)
+        self._filter_ids["cpf_cnpj"] = "gs_cpfcnpj"
+        self._filter_ids["credor"] = "gs_nome"
+        self._apply_filters()
 
 
 def main(exercicio: str = CURR_YEAR,

@@ -35,7 +35,6 @@ class JQGrid():
             for i in range(0, len(self.fields)):
                 field = self.fields[i]
                 value = r.xpath("./td")[i].get("title")
-                print(field, value)
                 row_data[field] = value
             result.append(row_data)
         return result

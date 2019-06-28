@@ -110,13 +110,13 @@ class TestByCreditor(unittest.TestCase):
 
     def test_constructor(self):
         """ Test whether all attributes are set as expected. """
-        self.assertEquals(self.view.curr_page, 1)
-        self.assertIn("cpf_cnpj", self.view._filters)
-        self.assertIn("credor", self.view._filters)
+        self.assertEqual(self.view.curr_page, 1)
+        self.assertIn("cpf_cnpj", self.view._filter_ids)
+        self.assertIn("credor", self.view._filter_ids)
 
     def test_scrape(self):
-        """ Test whether data scraping method returns results. """
-        scraped = self.view.scrape(stop=2)
+        """ Test whether .scrape() method returns any data. """
+        scraped = self.view.scrape(stop=3)
         print(len(scraped["results"]))
         self.assertGreater(len(scraped["results"]), 0)
 
