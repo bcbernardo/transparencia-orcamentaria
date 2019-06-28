@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import coloredlogs
 import datetime as dt
 import logging
 import selenium.webdriver
@@ -8,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException
 from typing import Tuple
 from utils import JQGrid
 
+coloredlogs.install()
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.DEBUG)
 
 URL = "http://portais.niteroi.rj.gov.br/portal-da-transparencia/despesas"
