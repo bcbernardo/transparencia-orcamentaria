@@ -2,9 +2,8 @@
 
 import datetime as dt
 import logging
-import lxml.html
+import selenium.webdriver
 import time
-from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from typing import Tuple
 from utils import JQGrid
@@ -25,12 +24,11 @@ class MainPage():
             formato 'DDMM'. Por padrão, inclui todo o período transcorrido.
     """
 
-    def __init__(self, driver: object = webdriver.Chrome(),
+    def __init__(self, driver: object = selenium.webdriver.Chrome(),
                  exercicio=CURR_YEAR, periodo: tuple = ("", "")):
         logging.debug("Accessing main page")
         self.driver = driver
         self.driver.get(URL)
-        self.page = lxml.html.fromstring(self.driver.page_source)
         # optionally change year for the query
         self.year = exercicio
         if self.year != CURR_YEAR:
@@ -52,8 +50,9 @@ class MainPage():
         """
         logging.debug("Validating fiscal year...")
         self.year = str(self.year)
-        years_available = self.page.xpath(
-            "//select[@id='exercicioConsulta']/option/text()")
+        years_available = [y.text for y in self.driver.find_elements_by_xpath(
+            "//select[@id='exercicioConsulta']/option")]
+
         try:
             assert self.year in years_available
         except AssertionError:
@@ -93,11 +92,7 @@ class MainPage():
                              + "respectivamente.")
 
     def set_period(self):
-        """ Seleciona o período de interesse.
-
-        Retorna:
-            object: WebDriver com filtro de período configurado.
-        """
+        """ Seleciona o período de interesse. """
         logging.debug("Setting period filter...")
         start_date_field = self.driver.find_element_by_id("periodoInicio")
         start_date_field.send_keys(str(self.period[0]))
@@ -126,7 +121,8 @@ class GenericExpensesView():
     """ Classe genérica de acesso às visões da base de despesas.
 
     Atributos:
-        driver (object): Instância já aberta de WebDriver para raspagem.
+        driver (object): Instância já aberta de um objeto selenium.webdriver
+            para raspagem.
         **kwargs (str): Argumentos nomeados opcionais, para filtrar os valores
             consultados.
     """
@@ -183,7 +179,8 @@ class ByCreditors(GenericExpensesView):
     """ Acesso às consultas de despesas por credor.
 
     Atributos:
-        driver (object): Instância já aberta de WebDriver para raspagem.
+        driver (object): Instância já aberta de um objeto selenium.webdriver
+            para raspagem.
         cpf_cnpj (str, opcional): Sequência de dígitos contidos no CPF ou
             CNPF do credor, sem pontos ou caracteres especiais. Por padrão,
             vazio.
