@@ -9,8 +9,8 @@ Todo list for Transparencia-Orcamentaria
 - [x] Re-factor expenses classes, abstracting into a base class (module despesas.py)
 - [x] Implement logging (module despesas.py)
 - [x] Refactor access to expenses views as methods of MainPage class
-- [ ] Create and run tests for existing classes and methods
-- [ ] Implement ByCreditors filter methods (module despesas.py)
+- [x] Create and run tests for existing classes and methods
+- [x] Implement ByCreditors filter methods (module despesas.py)
 - [ ] Implement GenericExpensesView method for changing rows per page
 - [ ] Implement registries of metadata (scraping date/time, user, last update etc.)
 - [ ] Implement ByElements and ByInstitution classes
