@@ -67,7 +67,7 @@ class MainPage():
         logging.debug("Setting fiscal year filter...")
         year_field = self.driver.find_element_by_xpath(
             "//select[@id='exercicioConsulta']/"
-            + "option[text()='{}']".format(self.year))
+            "option[text()='{}']".format(self.year))
         year_field.click()
 
     def validate_period(self):
@@ -90,8 +90,8 @@ class MainPage():
         except (TypeError, ValueError, IndexError, AssertionError):
             logging.exception("Invalid period: {}".format(str(self.period)))
             raise ValueError("As datas de início e fim devem ser informadas"
-                             + "como uma dupla no formato ('DDMM', 'DDMM'),"
-                             + "respectivamente.")
+                             "como uma dupla no formato ('DDMM', 'DDMM'),"
+                             "respectivamente.")
 
     def set_period(self):
         """ Seleciona o período de interesse. """
@@ -112,11 +112,12 @@ class MainPage():
             view_link = self.driver.find_element_by_xpath(
                 "//a[text()[normalize-space(.)='{}']]".format(descricao))
             view_link.click()
+            time.sleep(3)
         except NoSuchElementException:
             logging.exception("No element with given description!")
             raise ValueError("A descrição fornecida não corresponde a"
-                             + "nenhuma das visualizações disponíveis"
-                             + "no Portal da Transparência.")
+                             "nenhuma das visualizações disponíveis"
+                             "no Portal da Transparência.")
 
 
 class GenericExpensesView():
@@ -135,6 +136,42 @@ class GenericExpensesView():
         self._filter_params = kwargs  # user-provided parameters for filtering
         self._filter_ids = dict()  # {'field name for filtering': 'filterid'}
 
+    @property
+    def rows_per_page(self) -> int:
+        """ Obtém número de linhas por página na visualização atual.
+
+        Retorna:
+            int: O número de linhas por página na visualização atual.
+        """
+        logging.debug("Getting number of rows per page...")
+        rows_xpath = "//table[@id='list']/tbody/tr[@class!='jqgfirstrow']"
+        rows_in_view = self.driver.find_elements_by_xpath(rows_xpath)
+        return len(rows_in_view)
+
+    @rows_per_page.setter
+    def rows_per_page(self, rows: int):
+        """ Define o número de linhas retornadas em cada página da consulta
+
+        Argumentos:
+            rows (int): Número desejado de linhas por página (10, 20 ou 30).
+        Levanta:
+            ValueError: se o número fornecido não for o inteiro 10, 20 ou 30.
+        """
+        logging.debug("Setting number of rows per page...")
+        try:
+            assert isinstance(rows, int)
+            assert rows in [10, 20, 30]
+        except AssertionError:
+            logging.exception("Invalid number of rows per page.")
+            raise ValueError("O número de linhas por página deve ser o número"
+                             "inteiro 10, 20 ou 30.")
+        else:
+            rows_setter_xpath = ("//td[@id='pager_center']//select"
+                                 "/option[@value='{:d}']".format(rows))
+            rows_setter = self.driver.find_element_by_xpath(rows_setter_xpath)
+            rows_setter.click()
+            time.sleep(3)
+
     def _apply_filters(self):
         """ Aplica um filtro para a consulta. """
         for field_name, filter_expression in self._filter_params.items():
@@ -142,9 +179,6 @@ class GenericExpensesView():
                 element_id = self._filter_ids[field_name]
                 input_element = self.driver.find_element_by_id(element_id)
                 input_element.send_keys(filter_expression)
-
-    def rows_per_page(self, rows=10):
-        raise NotImplementedError()  # TODO
 
     def scrape(self, stop=1000) -> Tuple[dict, dict]:
         """ Raspa dados das tabelas jqGrid, até a última página da consulta.
@@ -156,10 +190,10 @@ class GenericExpensesView():
             tuple[dict, dict]: Tupla com um dicionário de metadados da raspagem
                 e um dicionário com os dados propriamente ditos.
         """
-
-        logging.info("Scraping started...")
+        self.rows_per_page = 30
         metadata = dict()  # TODO
         results = list()
+        logging.info("Scraping started...")
         while True:
             time.sleep(3)
             table = JQGrid(page_source=self.driver.page_source)

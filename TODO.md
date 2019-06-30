@@ -11,7 +11,7 @@ Todo list for Transparencia-Orcamentaria
 - [x] Refactor access to expenses views as methods of MainPage class
 - [x] Create and run tests for existing classes and methods
 - [x] Implement ByCreditors filter methods (module despesas.py)
-- [ ] Implement GenericExpensesView method for changing rows per page
+- [x] Implement GenericExpensesView method for changing rows per page
 - [ ] Implement registries of metadata (scraping date/time, user, last update etc.)
 - [ ] Implement ByElements and ByInstitution classes
 - [ ] Implement main() function with pipeline to extract all layers of data.

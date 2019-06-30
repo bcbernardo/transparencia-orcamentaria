@@ -24,7 +24,7 @@ class TestMainPage(unittest.TestCase):
             self.main_page.validate_year()
             self.assertIsInstance(self.main_page.year, str)
         except Exception as e:
-            self.fail("Unexpected exception raised!: {}".format(e))
+            self.fail("Unexpected exception raised!\n {}".format(e))
 
     def test_invalidate_bad_year(self):
         """ Test whether an invalid year will raise ValueError. """
@@ -38,7 +38,7 @@ class TestMainPage(unittest.TestCase):
             self.main_page.year = random.randrange(2008, 2019)
             self.main_page.set_year()
         except Exception as e:
-            self.fail("Unexpected exception raised!: {}".format(e))
+            self.fail("Unexpected exception raised!\n {}".format(e))
 
     def test_validate_period(self):
         """ Test whether a valid time period will be validated. """
@@ -49,7 +49,7 @@ class TestMainPage(unittest.TestCase):
             for date in self.main_page.period:
                 self.assertIsInstance(date, str)
         except Exception as e:
-            self.fail("Unexpected exception raised!: {}".format(e))
+            self.fail("Unexpected exception raised!\n {}".format(e))
 
     def test_invalidate_bad_period(self):
         """ Test whether an invalid time period will raise ValueError. """
@@ -72,7 +72,7 @@ class TestMainPage(unittest.TestCase):
             self.main_page.period = ("0101", "2802")
             self.main_page.set_period()
         except Exception as e:
-            self.fail("Unexpected exception raised!: {}".format(e))
+            self.fail("Unexpected exception raised!\n {}".format(e))
 
     def test_access_view(self):
         descriptions = [
@@ -84,7 +84,7 @@ class TestMainPage(unittest.TestCase):
                 self.main_page.access_view(descricao=descr)
                 self.setUp()
         except Exception as e:
-            self.fail("Unexpected exception raised!: {}".format(e))
+            self.fail("Unexpected exception raised!\n {}".format(e))
 
     def test_bad_view(self):
         description = "abaopdugbsakjçvb"
@@ -113,6 +113,20 @@ class TestByCreditor(unittest.TestCase):
         self.assertEqual(self.view.curr_page, 1)
         self.assertIn("cpf_cnpj", self.view._filter_ids)
         self.assertIn("credor", self.view._filter_ids)
+
+    def test_rows_per_page(self):
+        """ Test getter and setter of rows per page in current view. """
+        try:
+            print("Rows per page: ", self.view.rows_per_page)
+            self.view.rows_per_page = 30
+            print("New rows per page: ", self.view.rows_per_page)
+        except Exception as e:
+            self.fail("Unexpected exception raised!\n {}".format(e))
+
+    def test_bad_rows_per_page(self):
+        """ Test rows per page setter when an invalid value is given. """
+        with self.assertRaises(ValueError):
+            self.view.rows_per_page = 42
 
     def test_scrape(self):
         """ Test whether .scrape() method returns any data. """
